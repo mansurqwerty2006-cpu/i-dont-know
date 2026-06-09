@@ -36,9 +36,12 @@ Known local commands:
 - `/ask text` is used in groups.
 - `/web text` forces a Tavily web search before answering.
 - `/search text` is an alias for `/web text`.
+- `/image text` generates an image with Cloudflare Workers AI.
+- `/draw text` is an image generation command shown in the Telegram menu panel.
 - `/rag` shows Supabase/RAG status.
 - `/rag_search text` searches uploaded PDF/TXT/MD documents.
 - Sending a PDF/TXT/MD document to the bot indexes it into Supabase RAG storage.
+- The bot registers Telegram menu panel commands with `setMyCommands` on startup.
 - Natural image requests like "сгенерируй кота в космосе" or "draw a cat in space" generate an image with Cloudflare Workers AI and send it as a Telegram photo.
 
 Live web behavior:

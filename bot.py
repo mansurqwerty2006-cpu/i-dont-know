@@ -679,6 +679,21 @@ class TelegramGroqBot:
         self.username = result.get("username", "")
         return result
 
+    def set_bot_commands(self) -> None:
+        commands = [
+            {"command": "start", "description": "Запуск бота"},
+            {"command": "help", "description": "Помощь"},
+            {"command": "image", "description": "Сгенерировать картинку"},
+            {"command": "draw", "description": "Нарисовать картинку"},
+            {"command": "web", "description": "Поиск свежей информации"},
+            {"command": "rag", "description": "Статус базы документов"},
+            {"command": "rag_search", "description": "Поиск по PDF/TXT/MD"},
+            {"command": "reset", "description": "Очистить историю"},
+            {"command": "memory", "description": "Показать память"},
+            {"command": "commands", "description": "Список команд"},
+        ]
+        self.telegram_call("setMyCommands", {"commands": commands}, timeout=20)
+
     def get_updates(self, offset: int | None) -> list[dict[str, Any]]:
         payload: dict[str, Any] = {
             "timeout": 50,
@@ -1438,7 +1453,7 @@ class TelegramGroqBot:
             self.send_message(
                 chat_id,
                 "Привет! Напиши мне вопрос, и я отвечу через Groq AI.\n\n"
-                "Команды: /help, /reset, /model",
+                "Открой меню команд рядом с полем ввода или напиши: /help",
                 message_id,
             )
             return True
@@ -1448,6 +1463,7 @@ class TelegramGroqBot:
                 chat_id,
                 "Я отвечаю на обычные сообщения в личном чате.\n\n"
                 "Для картинки просто напиши обычным текстом: сгенерируй кота в космосе.\n"
+                "Или используй меню: /image кот в космосе, /draw город будущего.\n"
                 "/reset - очистить историю диалога\n"
                 "/model - показать текущую модель\n"
                 "/ask текст - задать вопрос в группе",
@@ -1521,6 +1537,8 @@ class TelegramGroqBot:
                 "/forget - очистить память\n"
                 "/web текст - поиск в интернете\n"
                 "/search текст - поиск в интернете\n"
+                "/image текст - сгенерировать картинку\n"
+                "/draw текст - нарисовать картинку\n"
                 "/rag - статус RAG/Supabase\n"
                 "/rag_search текст - поиск по загруженным PDF/TXT/MD\n"
                 "/ask текст - вопрос в группе",
@@ -1577,6 +1595,24 @@ class TelegramGroqBot:
                 self.send_message(chat_id, f"Не получилось ответить с web search.\n\nОшибка: {exc}", message_id)
                 return True
             self.send_message(chat_id, answer, message_id)
+            return True
+
+        if command in {"/image", "/draw"}:
+            prompt = command_argument(text)
+            if not prompt:
+                self.send_message(chat_id, "Напиши так: /image кот в космосе", message_id)
+                return True
+            self.send_upload_photo(chat_id)
+            try:
+                image_bytes = self.generate_image(prompt)
+                self.send_photo_bytes(chat_id, image_bytes, caption=prompt, reply_to_message_id=message_id)
+                self.histories[chat_id].append({"role": "user", "content": text})
+                self.histories[chat_id].append(
+                    {"role": "assistant", "content": f"Сгенерировал изображение по описанию: {prompt}"}
+                )
+            except Exception as exc:
+                logging.exception("Image command generation failed")
+                self.send_message(chat_id, f"Не получилось сгенерировать картинку.\n\nОшибка: {exc}", message_id)
             return True
 
         return False
@@ -1767,6 +1803,11 @@ def main() -> int:
 
     me = bot.get_me()
     username = me.get("username", "unknown")
+    try:
+        bot.set_bot_commands()
+        logging.info("Telegram command menu updated.")
+    except Exception:
+        logging.exception("Could not update Telegram command menu")
     logging.info("Bot @%s started. Press Ctrl+C to stop.", username)
 
     offset: int | None = None
