@@ -681,16 +681,16 @@ class TelegramGroqBot:
 
     def set_bot_commands(self) -> None:
         commands = [
-            {"command": "start", "description": "Запуск бота"},
-            {"command": "help", "description": "Помощь"},
-            {"command": "image", "description": "Сгенерировать картинку"},
-            {"command": "draw", "description": "Нарисовать картинку"},
-            {"command": "web", "description": "Поиск свежей информации"},
-            {"command": "rag", "description": "Статус базы документов"},
-            {"command": "rag_search", "description": "Поиск по PDF/TXT/MD"},
-            {"command": "reset", "description": "Очистить историю"},
-            {"command": "memory", "description": "Показать память"},
-            {"command": "commands", "description": "Список команд"},
+            {"command": "start", "description": "🏠 Главное меню"},
+            {"command": "image", "description": "🖼 Сгенерировать картинку"},
+            {"command": "draw", "description": "🎨 Нарисовать картинку"},
+            {"command": "web", "description": "🌐 Найти свежую информацию"},
+            {"command": "rag", "description": "📚 Статус базы документов"},
+            {"command": "rag_search", "description": "🔎 Поиск по PDF/TXT/MD"},
+            {"command": "memory", "description": "🧠 Показать память"},
+            {"command": "reset", "description": "🧹 Очистить историю"},
+            {"command": "help", "description": "ℹ️ Помощь"},
+            {"command": "commands", "description": "📋 Все команды"},
         ]
         self.telegram_call("setMyCommands", {"commands": commands}, timeout=20)
 
