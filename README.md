@@ -50,6 +50,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\start_background.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\stop_bot.ps1
 ```
 
+## Render
+
+Use these settings on Render:
+
+- Runtime: Python
+- Build Command: `pip install -r requirements.txt`
+- Start Command: `python bot.py`
+
+If you deploy it as a Render Web Service, the bot opens a tiny health server on `PORT` so Render can detect that the service is alive. The Telegram bot itself still works through long polling.
+
 ## Команды
 
 - `/start` - приветствие

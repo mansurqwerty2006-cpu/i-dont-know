@@ -7,9 +7,11 @@ import math
 import os
 import re
 import sys
+import threading
 import time
 import uuid
 from collections import defaultdict, deque
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 from urllib import error, parse, request
@@ -545,6 +547,40 @@ def load_json_file(path: Path, default: Any) -> Any:
 def save_json_file(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def start_health_server_if_needed() -> None:
+    port_value = os.getenv("PORT", "").strip()
+    if not port_value:
+        return
+
+    try:
+        port = int(port_value)
+    except ValueError:
+        logging.warning("Invalid PORT=%r; health server disabled.", port_value)
+        return
+
+    class HealthHandler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            body = b"ok\n"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_HEAD(self) -> None:
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.end_headers()
+
+        def log_message(self, format: str, *args: Any) -> None:
+            logging.debug("Health check: " + format, *args)
+
+    server = ThreadingHTTPServer(("0.0.0.0", port), HealthHandler)
+    thread = threading.Thread(target=server.serve_forever, name="render-health-server", daemon=True)
+    thread.start()
+    logging.info("Health server listening on 0.0.0.0:%s.", port)
 
 
 def load_few_shot_examples(path: Path, limit: int) -> list[dict[str, str]]:
@@ -1719,6 +1755,7 @@ class TelegramGroqBot:
 def main() -> int:
     setup_logging()
     load_env()
+    start_health_server_if_needed()
 
     telegram_token = require_env("TELEGRAM_BOT_TOKEN")
     groq_api_key = require_env("GROQ_API_KEY")
